@@ -1,0 +1,23 @@
+name: Public compatibility module tests
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  native-and-pe-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build standalone Win32 file API core
+        run: |
+          cmake -S . -B build -DCMAKE_BUILD_TYPE=Debug
+          cmake --build build --parallel 2
+      - name: File operations, CRT and sandbox regressions
+        run: ctest --test-dir build --output-on-failure
+      - name: PE32 and PE32+ static import analysis
+        run: python3 -m unittest discover -s tests -p 'test_*.py' -v
