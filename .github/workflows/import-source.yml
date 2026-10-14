@@ -29,7 +29,8 @@ jobs:
           test -f "$RUNNER_TEMP/source/LICENSE"
           cp -a "$RUNNER_TEMP/source/." .
           rm -rf bootstrap
-          rm -f .github/workflows/import-source.yml
+          rm -f .github/workflows/compatibility.yml
+          # Keep this bootstrap workflow unchanged; Actions GITHUB_TOKEN cannot modify workflow files.
       - name: Commit imported source on main
         shell: bash
         run: |
