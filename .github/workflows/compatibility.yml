@@ -47,3 +47,12 @@ jobs:
       - name: PE32 and PE32+ static comparison and manifest contracts
         if: matrix.python
         run: python3 -m unittest discover -s tests -p 'test_*.py' -v
+
+      - name: Publish reviewed source-kit for future private host integration
+        if: matrix.python && github.ref == 'refs/heads/main'
+        uses: actions/upload-artifact@v4
+        with:
+          name: WinInstaller-CompatLab-v0.3-source-kit
+          path: dist/WinInstaller-CompatLab-0.3.0.wicmod
+          if-no-files-found: error
+          retention-days: 7
