@@ -1,0 +1,23 @@
+{
+  "KERNEL32.dll": [
+    "CreateFileW",
+    "ReadFile",
+    "WriteFile",
+    "SetFilePointerEx",
+    "GetFileSizeEx",
+    "FlushFileBuffers",
+    "CloseHandle",
+    "DeleteFileW",
+    "CreateDirectoryW",
+    "RemoveDirectoryW",
+    "GetFileAttributesW",
+    "MoveFileExW"
+  ],
+  "ucrtbase.dll": [
+    "_wopen",
+    "_read",
+    "_write",
+    "_close",
+    "_get_osfhandle"
+  ]
+}
