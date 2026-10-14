@@ -1,0 +1,710 @@
+{
+  "schema_version": 2,
+  "lab_version": "0.2.0",
+  "scope": "Public host API subsets only; not Private Android runtime support",
+  "legacy_manifest": "lab_manifest.json",
+  "apis": [
+    {
+      "dll": "KERNEL32.dll",
+      "name": "CreateFileW",
+      "status": "PARTIAL",
+      "encoding": "UTF-16 paths",
+      "supported_flags": [
+        "GENERIC_READ",
+        "GENERIC_WRITE",
+        "FILE_SHARE_READ",
+        "FILE_SHARE_WRITE",
+        "FILE_SHARE_DELETE",
+        "CREATE_NEW",
+        "CREATE_ALWAYS",
+        "OPEN_EXISTING",
+        "OPEN_ALWAYS",
+        "TRUNCATE_EXISTING"
+      ],
+      "returns": "Result<Handle>; INVALID_HANDLE on failure; success diagnostic 183 for existing OPEN_ALWAYS/CREATE_ALWAYS",
+      "errors": [
+        2,
+        3,
+        5,
+        32,
+        80,
+        87,
+        123
+      ],
+      "tests": [
+        "tests/test_file_api.cpp",
+        "tests/test_file_edges.cpp",
+        "tests/test_profiles.cpp"
+      ],
+      "limitations": [
+        "No attributes/security/template/overlapped parameters; CREATE_ALWAYS requires write access",
+        "ASCII case folding only; strict absolute C/D paths, no dot normalization or NT paths",
+        "POSIX unlink rather than NT delete-pending; share checks within this instance only",
+        "Metadata access=0 still follows conservative file sharing checks; attribute sharing exemption not implemented"
+      ],
+      "host_dependencies": [
+        "Linux/Android POSIX",
+        "renameat2 RENAME_NOREPLACE for no-clobber move",
+        "trusted exclusive sandbox namespace"
+      ]
+    },
+    {
+      "dll": "KERNEL32.dll",
+      "name": "ReadFile",
+      "status": "PARTIAL",
+      "encoding": "raw bytes / integer handles",
+      "supported_flags": [],
+      "returns": "Result<size_t>; EOF is success with zero bytes",
+      "errors": [
+        5,
+        6,
+        87
+      ],
+      "tests": [
+        "tests/test_file_api.cpp",
+        "tests/test_file_edges.cpp",
+        "tests/test_profiles.cpp"
+      ],
+      "limitations": [
+        "Synchronous regular files only; host short reads returned; no overlapped I/O"
+      ],
+      "host_dependencies": [
+        "Linux/Android POSIX",
+        "renameat2 RENAME_NOREPLACE for no-clobber move",
+        "trusted exclusive sandbox namespace"
+      ]
+    },
+    {
+      "dll": "KERNEL32.dll",
+      "name": "WriteFile",
+      "status": "PARTIAL",
+      "encoding": "raw bytes / integer handles",
+      "supported_flags": [],
+      "returns": "Result<size_t>; bytes written, including host short writes",
+      "errors": [
+        5,
+        6,
+        87,
+        112
+      ],
+      "tests": [
+        "tests/test_file_api.cpp",
+        "tests/test_file_edges.cpp",
+        "tests/test_profiles.cpp"
+      ],
+      "limitations": [
+        "Synchronous regular files only; host short writes returned"
+      ],
+      "host_dependencies": [
+        "Linux/Android POSIX",
+        "renameat2 RENAME_NOREPLACE for no-clobber move",
+        "trusted exclusive sandbox namespace"
+      ]
+    },
+    {
+      "dll": "KERNEL32.dll",
+      "name": "SetFilePointerEx",
+      "status": "PARTIAL",
+      "encoding": "raw bytes / integer handles",
+      "supported_flags": [
+        "FILE_BEGIN (0)",
+        "FILE_CURRENT (1)",
+        "FILE_END (2)"
+      ],
+      "returns": "Result<uint64_t>; new offset",
+      "errors": [
+        6,
+        87,
+        131
+      ],
+      "tests": [
+        "tests/test_file_api.cpp",
+        "tests/test_file_edges.cpp",
+        "tests/test_profiles.cpp"
+      ],
+      "limitations": [
+        "POSIX signed off_t range; no unbuffered I/O; distances outside signed host range not supported"
+      ],
+      "host_dependencies": [
+        "Linux/Android POSIX",
+        "renameat2 RENAME_NOREPLACE for no-clobber move",
+        "trusted exclusive sandbox namespace"
+      ]
+    },
+    {
+      "dll": "KERNEL32.dll",
+      "name": "GetFileSizeEx",
+      "status": "TESTED",
+      "encoding": "raw bytes / integer handles",
+      "supported_flags": [],
+      "returns": "Result<uint64_t>; regular file size",
+      "errors": [
+        6
+      ],
+      "tests": [
+        "tests/test_file_api.cpp",
+        "tests/test_file_edges.cpp",
+        "tests/test_profiles.cpp"
+      ],
+      "limitations": [
+        "Only opened regular-file handles"
+      ],
+      "host_dependencies": [
+        "Linux/Android POSIX",
+        "renameat2 RENAME_NOREPLACE for no-clobber move",
+        "trusted exclusive sandbox namespace"
+      ]
+    },
+    {
+      "dll": "KERNEL32.dll",
+      "name": "FlushFileBuffers",
+      "status": "PARTIAL",
+      "encoding": "raw bytes / integer handles",
+      "supported_flags": [],
+      "returns": "Error; adapter maps success to BOOL",
+      "errors": [
+        6,
+        5
+      ],
+      "tests": [
+        "tests/test_file_api.cpp",
+        "tests/test_file_edges.cpp",
+        "tests/test_profiles.cpp"
+      ],
+      "limitations": [
+        "Host fsync; no device/pipe/overlapped handles"
+      ],
+      "host_dependencies": [
+        "Linux/Android POSIX",
+        "renameat2 RENAME_NOREPLACE for no-clobber move",
+        "trusted exclusive sandbox namespace"
+      ],
+      "required_access": "GENERIC_WRITE"
+    },
+    {
+      "dll": "KERNEL32.dll",
+      "name": "CloseHandle",
+      "status": "PARTIAL",
+      "encoding": "raw bytes / integer handles",
+      "supported_flags": [],
+      "returns": "Error; adapter maps success to BOOL",
+      "errors": [
+        6
+      ],
+      "tests": [
+        "tests/test_file_api.cpp",
+        "tests/test_file_edges.cpp",
+        "tests/test_profiles.cpp"
+      ],
+      "limitations": [
+        "Only FileApi-owned file handles; borrowed CRT handle is not closable here"
+      ],
+      "host_dependencies": [
+        "Linux/Android POSIX",
+        "renameat2 RENAME_NOREPLACE for no-clobber move",
+        "trusted exclusive sandbox namespace"
+      ]
+    },
+    {
+      "dll": "KERNEL32.dll",
+      "name": "DeleteFileW",
+      "status": "PARTIAL",
+      "encoding": "UTF-16 paths",
+      "supported_flags": [],
+      "returns": "Error; adapter maps success to BOOL",
+      "errors": [
+        2,
+        3,
+        5,
+        32,
+        123
+      ],
+      "tests": [
+        "tests/test_file_api.cpp",
+        "tests/test_file_edges.cpp",
+        "tests/test_profiles.cpp"
+      ],
+      "limitations": [
+        "Immediate POSIX unlink, not NT delete-pending; no cross-context sharing"
+      ],
+      "host_dependencies": [
+        "Linux/Android POSIX",
+        "renameat2 RENAME_NOREPLACE for no-clobber move",
+        "trusted exclusive sandbox namespace"
+      ]
+    },
+    {
+      "dll": "KERNEL32.dll",
+      "name": "CreateDirectoryW",
+      "status": "PARTIAL",
+      "encoding": "UTF-16 paths",
+      "supported_flags": [],
+      "returns": "Error; adapter maps success to BOOL",
+      "errors": [
+        3,
+        5,
+        123,
+        183
+      ],
+      "tests": [
+        "tests/test_file_api.cpp",
+        "tests/test_file_edges.cpp",
+        "tests/test_profiles.cpp"
+      ],
+      "limitations": [
+        "No recursive creation/security attributes; trailing separator accepted"
+      ],
+      "host_dependencies": [
+        "Linux/Android POSIX",
+        "renameat2 RENAME_NOREPLACE for no-clobber move",
+        "trusted exclusive sandbox namespace"
+      ]
+    },
+    {
+      "dll": "KERNEL32.dll",
+      "name": "RemoveDirectoryW",
+      "status": "PARTIAL",
+      "encoding": "UTF-16 paths",
+      "supported_flags": [],
+      "returns": "Error; adapter maps success to BOOL",
+      "errors": [
+        3,
+        5,
+        123,
+        145
+      ],
+      "tests": [
+        "tests/test_file_api.cpp",
+        "tests/test_file_edges.cpp",
+        "tests/test_profiles.cpp"
+      ],
+      "limitations": [
+        "Empty directories only; no directory handles/delete-pending"
+      ],
+      "host_dependencies": [
+        "Linux/Android POSIX",
+        "renameat2 RENAME_NOREPLACE for no-clobber move",
+        "trusted exclusive sandbox namespace"
+      ]
+    },
+    {
+      "dll": "KERNEL32.dll",
+      "name": "GetFileAttributesW",
+      "status": "PARTIAL",
+      "encoding": "UTF-16 paths",
+      "supported_flags": [
+        "READONLY",
+        "DIRECTORY",
+        "NORMAL"
+      ],
+      "returns": "Result<uint32_t>; attributes; adapter supplies INVALID_FILE_ATTRIBUTES on failure",
+      "errors": [
+        2,
+        3,
+        5,
+        123
+      ],
+      "tests": [
+        "tests/test_file_api.cpp",
+        "tests/test_file_edges.cpp",
+        "tests/test_profiles.cpp"
+      ],
+      "limitations": [
+        "READONLY mapped to host owner-write bit; no hidden/system/archive/timestamps"
+      ],
+      "host_dependencies": [
+        "Linux/Android POSIX",
+        "renameat2 RENAME_NOREPLACE for no-clobber move",
+        "trusted exclusive sandbox namespace"
+      ]
+    },
+    {
+      "dll": "KERNEL32.dll",
+      "name": "MoveFileExW",
+      "status": "PARTIAL",
+      "encoding": "UTF-16 paths",
+      "supported_flags": [
+        "0",
+        "MOVEFILE_REPLACE_EXISTING"
+      ],
+      "returns": "Error; adapter maps success to BOOL",
+      "errors": [
+        2,
+        3,
+        5,
+        17,
+        32,
+        50,
+        123,
+        183
+      ],
+      "tests": [
+        "tests/test_file_api.cpp",
+        "tests/test_file_edges.cpp",
+        "tests/test_profiles.cpp"
+      ],
+      "limitations": [
+        "Regular files only; no cross-drive copy, reboot, directory move, or case-only rename",
+        "Legacy directory destination conflict reports 32; no global namespace lock against external writers"
+      ],
+      "host_dependencies": [
+        "Linux/Android POSIX",
+        "renameat2 RENAME_NOREPLACE for no-clobber move",
+        "trusted exclusive sandbox namespace"
+      ]
+    },
+    {
+      "dll": "ucrtbase.dll",
+      "name": "_wopen",
+      "status": "PARTIAL",
+      "encoding": "UTF-16 paths",
+      "supported_flags": [
+        "_O_RDONLY",
+        "_O_WRONLY",
+        "_O_RDWR",
+        "_O_BINARY",
+        "_O_APPEND",
+        "_O_CREAT",
+        "_O_EXCL",
+        "_O_TRUNC",
+        "_O_NOINHERIT"
+      ],
+      "returns": "Result<int>; -1 on failure",
+      "errors": [
+        2,
+        3,
+        5,
+        32,
+        50,
+        80,
+        87
+      ],
+      "tests": [
+        "tests/test_file_api.cpp",
+        "tests/test_file_edges.cpp",
+        "tests/test_profiles.cpp"
+      ],
+      "limitations": [
+        "Binary mode only; no pmode parameter/umask emulation; creation uses 0600",
+        "Descriptor owns borrowed Win32 handle; text/default modes explicitly rejected"
+      ],
+      "host_dependencies": [
+        "Linux/Android POSIX",
+        "renameat2 RENAME_NOREPLACE for no-clobber move",
+        "trusted exclusive sandbox namespace"
+      ]
+    },
+    {
+      "dll": "ucrtbase.dll",
+      "name": "_read",
+      "status": "PARTIAL",
+      "encoding": "raw bytes / integer handles",
+      "supported_flags": [],
+      "returns": "Result<size_t>; adapter returns byte count or -1",
+      "errors": [
+        5,
+        6,
+        87
+      ],
+      "tests": [
+        "tests/test_file_api.cpp",
+        "tests/test_file_edges.cpp",
+        "tests/test_profiles.cpp"
+      ],
+      "limitations": [
+        "Binary only; descriptor-local state"
+      ],
+      "host_dependencies": [
+        "Linux/Android POSIX",
+        "renameat2 RENAME_NOREPLACE for no-clobber move",
+        "trusted exclusive sandbox namespace"
+      ]
+    },
+    {
+      "dll": "ucrtbase.dll",
+      "name": "_write",
+      "status": "PARTIAL",
+      "encoding": "raw bytes / integer handles",
+      "supported_flags": [],
+      "returns": "Result<size_t>; adapter returns byte count or -1",
+      "errors": [
+        5,
+        6,
+        87,
+        112
+      ],
+      "tests": [
+        "tests/test_file_api.cpp",
+        "tests/test_file_edges.cpp",
+        "tests/test_profiles.cpp"
+      ],
+      "limitations": [
+        "Binary only; append uses POSIX O_APPEND"
+      ],
+      "host_dependencies": [
+        "Linux/Android POSIX",
+        "renameat2 RENAME_NOREPLACE for no-clobber move",
+        "trusted exclusive sandbox namespace"
+      ]
+    },
+    {
+      "dll": "ucrtbase.dll",
+      "name": "_close",
+      "status": "TESTED",
+      "encoding": "raw bytes / integer handles",
+      "supported_flags": [],
+      "returns": "Error; adapter returns 0 or -1",
+      "errors": [
+        6
+      ],
+      "tests": [
+        "tests/test_file_api.cpp",
+        "tests/test_file_edges.cpp",
+        "tests/test_profiles.cpp"
+      ],
+      "limitations": [
+        "Owned descriptors only; double-close rejected"
+      ],
+      "host_dependencies": [
+        "Linux/Android POSIX",
+        "renameat2 RENAME_NOREPLACE for no-clobber move",
+        "trusted exclusive sandbox namespace"
+      ]
+    },
+    {
+      "dll": "ucrtbase.dll",
+      "name": "_get_osfhandle",
+      "status": "TESTED",
+      "encoding": "raw bytes / integer handles",
+      "supported_flags": [],
+      "returns": "Result<Handle>; borrowed handle or INVALID_HANDLE",
+      "errors": [
+        6
+      ],
+      "tests": [
+        "tests/test_file_api.cpp",
+        "tests/test_file_edges.cpp",
+        "tests/test_profiles.cpp"
+      ],
+      "limitations": [
+        "No ownership transfer; descriptor close invalidates borrowed handle"
+      ],
+      "host_dependencies": [
+        "Linux/Android POSIX",
+        "renameat2 RENAME_NOREPLACE for no-clobber move",
+        "trusted exclusive sandbox namespace"
+      ]
+    },
+    {
+      "dll": "ADVAPI32.dll",
+      "name": "RegOpenKeyExW",
+      "status": "PARTIAL",
+      "encoding": "UTF-16LE names/data",
+      "supported_flags": [
+        "options=0",
+        "KEY_READ",
+        "KEY_WRITE",
+        "KEY_ALL_ACCESS",
+        "subsets of KEY_ALL_ACCESS"
+      ],
+      "returns": "Result<RegistryHandle>; adapter returns LSTATUS and writes handle only on success",
+      "errors": [
+        2,
+        5,
+        6,
+        50,
+        87
+      ],
+      "tests": [
+        "tests/test_registry_api.cpp",
+        "tests/test_profiles.cpp"
+      ],
+      "limitations": [
+        "HKCU/HKLM only; ASCII folding, exact non-ASCII; no WOW64 views/links/ACLs",
+        "Empty predefined root returns original root; empty nonroot allocates new handle"
+      ],
+      "host_dependencies": [
+        "C++17 standard library"
+      ]
+    },
+    {
+      "dll": "ADVAPI32.dll",
+      "name": "RegCreateKeyExW",
+      "status": "PARTIAL",
+      "encoding": "UTF-16LE names/data",
+      "supported_flags": [
+        "options=REG_OPTION_NON_VOLATILE",
+        "KEY_READ",
+        "KEY_WRITE",
+        "KEY_ALL_ACCESS",
+        "subsets of KEY_ALL_ACCESS"
+      ],
+      "returns": "Result<RegistryHandle>; optional disposition 1 new / 2 existing",
+      "errors": [
+        5,
+        6,
+        50,
+        87
+      ],
+      "tests": [
+        "tests/test_registry_api.cpp",
+        "tests/test_profiles.cpp"
+      ],
+      "limitations": [
+        "Memory per virtual hive lifetime; no durable storage, volatile/link/backup options or security attributes",
+        "HKCU writable; virtual HKLM read-only unless configured explicitly; create checks hive policy not parent handle mask",
+        "Up to 32 components per call, 255 UTF-16 units per component; total depth capped at 512"
+      ],
+      "host_dependencies": [
+        "C++17 standard library"
+      ]
+    },
+    {
+      "dll": "ADVAPI32.dll",
+      "name": "RegQueryValueExW",
+      "status": "PARTIAL",
+      "encoding": "UTF-16LE names/data",
+      "supported_flags": [
+        "REG_SZ",
+        "REG_EXPAND_SZ",
+        "REG_DWORD",
+        "REG_QWORD",
+        "REG_BINARY"
+      ],
+      "returns": "Error/LSTATUS; byte size and optional type; 234 with required size when too small",
+      "errors": [
+        2,
+        5,
+        6,
+        87,
+        234
+      ],
+      "tests": [
+        "tests/test_registry_api.cpp",
+        "tests/test_profiles.cpp",
+        "tests/test_registry_output_probe.cpp"
+      ],
+      "limitations": [
+        "No expansion, terminator synthesis, or type coercion; copied raw bytes",
+        "Adapter checks reserved NULL; no predefined performance hives"
+      ],
+      "host_dependencies": [
+        "C++17 standard library"
+      ]
+    },
+    {
+      "dll": "ADVAPI32.dll",
+      "name": "RegSetValueExW",
+      "status": "PARTIAL",
+      "encoding": "UTF-16LE names/data",
+      "supported_flags": [
+        "REG_SZ",
+        "REG_EXPAND_SZ",
+        "REG_DWORD",
+        "REG_QWORD",
+        "REG_BINARY"
+      ],
+      "returns": "Error/LSTATUS; deep copy of exactly cbData bytes",
+      "errors": [
+        5,
+        6,
+        8,
+        50,
+        87
+      ],
+      "tests": [
+        "tests/test_registry_api.cpp",
+        "tests/test_profiles.cpp"
+      ],
+      "limitations": [
+        "DWORD/QWORD are caller-supplied little-endian 4/8-byte data; raw malformed payloads not repaired",
+        "String callers supply UTF-16LE bytes including terminators; query does not guarantee termination",
+        "Adapter checks Reserved=0; no host registry writes"
+      ],
+      "host_dependencies": [
+        "C++17 standard library"
+      ]
+    },
+    {
+      "dll": "ADVAPI32.dll",
+      "name": "RegCloseKey",
+      "status": "TESTED",
+      "encoding": "UTF-16LE names/data",
+      "supported_flags": [],
+      "returns": "Error/LSTATUS; 0 on close or supported predefined hive",
+      "errors": [
+        6
+      ],
+      "tests": [
+        "tests/test_registry_api.cpp",
+        "tests/test_profiles.cpp"
+      ],
+      "limitations": [
+        "Only handles allocated by this context and two supported predefined roots"
+      ],
+      "host_dependencies": [
+        "C++17 standard library"
+      ]
+    },
+    {
+      "dll": "ADVAPI32.dll",
+      "name": "RegDeleteValueW",
+      "status": "UNSUPPORTED",
+      "reason": "No public module implementation; no stub/success result"
+    },
+    {
+      "dll": "ADVAPI32.dll",
+      "name": "RegDeleteKeyW",
+      "status": "UNSUPPORTED",
+      "reason": "No public module implementation; no stub/success result"
+    },
+    {
+      "dll": "ADVAPI32.dll",
+      "name": "RegEnumKeyExW",
+      "status": "UNSUPPORTED",
+      "reason": "No public module implementation; no stub/success result"
+    },
+    {
+      "dll": "ADVAPI32.dll",
+      "name": "RegEnumValueW",
+      "status": "UNSUPPORTED",
+      "reason": "No public module implementation; no stub/success result"
+    },
+    {
+      "dll": "KERNEL32.dll",
+      "name": "CreateProcessW",
+      "status": "UNSUPPORTED",
+      "reason": "No public module implementation; no stub/success result"
+    },
+    {
+      "dll": "KERNEL32.dll",
+      "name": "LoadLibraryW",
+      "status": "UNSUPPORTED",
+      "reason": "No public module implementation; no stub/success result"
+    },
+    {
+      "dll": "KERNEL32.dll",
+      "name": "GetProcAddress",
+      "status": "UNSUPPORTED",
+      "reason": "No public module implementation; no stub/success result"
+    },
+    {
+      "dll": "USER32.dll",
+      "name": "CreateWindowExW",
+      "status": "UNSUPPORTED",
+      "reason": "No public module implementation; no stub/success result"
+    },
+    {
+      "dll": "ole32.dll",
+      "name": "CoCreateInstance",
+      "status": "UNSUPPORTED",
+      "reason": "No public module implementation; no stub/success result"
+    },
+    {
+      "dll": "d3d11.dll",
+      "name": "D3D11CreateDevice",
+      "status": "UNSUPPORTED",
+      "reason": "No public module implementation; no stub/success result"
+    }
+  ]
+}

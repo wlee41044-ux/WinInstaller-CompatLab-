@@ -198,7 +198,7 @@ Result<Handle> FileApi::openLocked(const std::u16string& path,std::uint32_t acce
        (append && !(access&GENERIC_WRITE)))return {INVALID_HANDLE,Error::invalid_parameter};
     const bool create=disposition==CREATE_NEW || disposition==CREATE_ALWAYS || disposition==OPEN_ALWAYS;
     const bool truncate=disposition==CREATE_ALWAYS || disposition==TRUNCATE_EXISTING;
-    if((create||truncate) && !(access&GENERIC_WRITE))return {INVALID_HANDLE,Error::access_denied};
+    if(truncate && !(access&GENERIC_WRITE))return {INVALID_HANDLE,Error::access_denied};
     if(isDriveRoot(path))return {INVALID_HANDLE,Error::access_denied};
     auto pr=parentOf(path);
     if(!pr.ok()) return {INVALID_HANDLE,pr.error};
@@ -212,6 +212,7 @@ Result<Handle> FileApi::openLocked(const std::u16string& path,std::uint32_t acce
     if(exists){
         if(::fstatat(p.fd,found.value.c_str(),&old,AT_SYMLINK_NOFOLLOW)<0){auto err=osError(errno);closeParent(p);return{INVALID_HANDLE,err};}
         if(!S_ISREG(old.st_mode)){closeParent(p);return{INVALID_HANDLE,Error::access_denied};}
+        if((access&GENERIC_WRITE) && !(old.st_mode&S_IWUSR)){closeParent(p);return{INVALID_HANDLE,Error::access_denied};}
         if(sharingConflict(old.st_dev,old.st_ino,access,share)){closeParent(p);return {INVALID_HANDLE,Error::sharing_violation};}
     }
     int flags=O_CLOEXEC|O_NOFOLLOW;
@@ -232,7 +233,8 @@ Result<Handle> FileApi::openLocked(const std::u16string& path,std::uint32_t acce
     if(::fstat(fd,&st)!=0 || !S_ISREG(st.st_mode)) {::close(fd);return {INVALID_HANDLE,Error::access_denied};}
     Handle h=next_++;
     handles_.emplace(h,File{fd,access,share,static_cast<std::uint64_t>(st.st_dev),static_cast<std::uint64_t>(st.st_ino),append});
-    return {h,Error::ok};
+    return {h,Error::ok,exists && (disposition==CREATE_ALWAYS || disposition==OPEN_ALWAYS)
+                          ?Error::already_exists:Error::ok};
 }
 
 Result<Handle> FileApi::createFile(const std::u16string& path,std::uint32_t access,std::uint32_t share,std::uint32_t disposition) {
@@ -263,7 +265,7 @@ Result<std::uint64_t> FileApi::setFilePointer(Handle handle,std::int64_t distanc
     if(i==handles_.end())return {0,Error::invalid_handle};
     if(origin!=SEEK_SET && origin!=SEEK_CUR && origin!=SEEK_END)return {0,Error::invalid_parameter};
     off_t position=::lseek(i->second.fd,static_cast<off_t>(distance),origin);
-    return position<0?Result<std::uint64_t>{0,osError(errno)}:Result<std::uint64_t>{static_cast<std::uint64_t>(position),Error::ok};
+    return position<0?Result<std::uint64_t>{0,errno==EINVAL?Error::negative_seek:osError(errno)}:Result<std::uint64_t>{static_cast<std::uint64_t>(position),Error::ok};
 }
 Result<std::uint64_t> FileApi::getFileSize(Handle handle){
     std::lock_guard<std::mutex> g(mutex_);
@@ -276,6 +278,7 @@ Error FileApi::flushFileBuffers(Handle handle){
     std::lock_guard<std::mutex> g(mutex_);
     auto i=handles_.find(handle);
     if(i==handles_.end())return Error::invalid_handle;
+    if(!(i->second.access&GENERIC_WRITE))return Error::access_denied;
     return ::fsync(i->second.fd)==0?Error::ok:osError(errno);
 }
 Error FileApi::closeHandle(Handle handle){
@@ -345,6 +348,9 @@ Result<std::uint32_t> FileApi::getFileAttributes(const std::u16string& path){
 }
 Error FileApi::moveFileEx(const std::u16string& from,const std::u16string& to,std::uint32_t flags){
     if(flags & ~MOVEFILE_REPLACE_EXISTING)return Error::not_supported;
+    const auto parsedFrom=parse(from),parsedTo=parse(to);
+    if(!parsedFrom.ok() || !parsedTo.ok())return !parsedFrom.ok()?parsedFrom.error:parsedTo.error;
+    if(parsedFrom.value.drive!=parsedTo.value.drive)return Error::not_same_device;
     std::lock_guard<std::mutex> g(mutex_);
     auto src=parentOf(from);if(!src.ok())return src.error;
     auto dst=parentOf(to);if(!dst.ok()){closeParent(src.value);return dst.error;}
@@ -359,6 +365,7 @@ Error FileApi::moveFileEx(const std::u16string& from,const std::u16string& to,st
         struct stat dstst{};if(::fstatat(b.fd,dest.value.c_str(),&dstst,AT_SYMLINK_NOFOLLOW)<0){auto e=osError(errno);closeParent(a);closeParent(b);return e;}
         if(!S_ISREG(dstst.st_mode) || deleteBlocked(dstst.st_dev,dstst.st_ino)){closeParent(a);closeParent(b);return Error::sharing_violation;}
         if(!(flags&MOVEFILE_REPLACE_EXISTING)){closeParent(a);closeParent(b);return Error::already_exists;}
+        if(!(dstst.st_mode&S_IWUSR)){closeParent(a);closeParent(b);return Error::access_denied;}
     }
     // Android targets Linux: no-clobber rename uses renameat2 where available.
     int rc=-1;
@@ -377,7 +384,7 @@ Error FileApi::moveFileEx(const std::u16string& from,const std::u16string& to,st
 Result<int> FileApi::wopen(const std::u16string& path,std::uint32_t flags){
     constexpr std::uint32_t valid=CRT_O_RDWR|CRT_O_WRONLY|CRT_O_APPEND|CRT_O_NOINHERIT|CRT_O_CREAT|CRT_O_TRUNC|CRT_O_EXCL|CRT_O_BINARY;
     if(flags&~valid)return {-1,Error::not_supported};
-    if((flags&CRT_O_RDWR)==(CRT_O_WRONLY|CRT_O_RDWR) || ((flags&CRT_O_EXCL)&&!(flags&CRT_O_CREAT)) ||
+    if((flags&(CRT_O_WRONLY|CRT_O_RDWR))==(CRT_O_WRONLY|CRT_O_RDWR) || ((flags&CRT_O_EXCL)&&!(flags&CRT_O_CREAT)) ||
        ((flags&CRT_O_TRUNC) && !(flags&(CRT_O_WRONLY|CRT_O_RDWR))))return {-1,Error::invalid_parameter};
     // Explicit _O_TEXT or no _O_BINARY is NOT assumed to mean binary: the CRT normally performs translation.
     if(!(flags&CRT_O_BINARY))return {-1,Error::not_supported};

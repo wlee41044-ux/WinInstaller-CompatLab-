@@ -1,0 +1,21 @@
+# v0.2 validation record
+
+Starting public main: `8a84c5f5730fb1680c1ef5ee2ba1f284a94f292b` (remote checked 2026-10-14). No private checkout/modification. MIT unchanged.
+
+Baseline: GCC 13.3 C++17/CMake Debug, original C++ test PASS; Python original 5/5 PASS. CMake was initially absent and prepared locally before baseline.
+
+RED evidence: old code rejected read-only OPEN_ALWAYS, accepted invalid CRT access bits, replaced a read-only destination, moved between virtual drives and returned 87 rather than 131 for negative resulting seek. The creation success diagnostic field and Registry module were absent (compile RED). Added file tests demonstrate original preservation, mode/disposition/size/errors, Korean/supplementary paths, stale/double-close handles and repeated OS descriptor counts. Additional already-correct paths were retained as acceptance coverage rather than reported as new fixes.
+
+Registry: five new APIs; 12 named host cases cover keys/default values, five raw value types, byte-size negotiation/canaries, access rights, HKCU/HKLM policy, invalid buffers/options, Unicode names, context/foreign/stale handles, repeated 2000 handle cycles and caller-buffer ownership. Four separately runnable composite profiles cover utility, installer-like, registry-dependent and binary CRT operations. They do not run Windows apps.
+
+PE RED evidence: malformed imports could read strings outside section-backed bytes, omit the descriptor terminator within the declared directory or mislabel an unsupported machine. Schema/status/frequency/privacy tests were absent. Python after implementation: 16/16 PASS, including all original tests. Fixtures are generated in memory only; CLI test writes an owned fixture temporarily.
+
+GCC host verification: CMake build and CTest 27/27 PASS (original 1 + new 10 file + 12 Registry + 4 profiles). Clang 18.1.3 ASan/UBSan CTest 27/27 PASS with local detect_leaks=0. Full local LeakSanitizer execution failed at its /proc/task/ptrace environment check, not an API assertion; no local LSan success is claimed. Public CI retains detect_leaks=1 and its final result is reported at delivery. Never infer CI PASS from a local result. Public workflow contains two standard Ubuntu jobs (GCC and Clang sanitizers); Python runs once.
+
+Counts are named test cases, not assertions or supported applications. Initial additions: 26 C++ cases and 11 Python cases; any final-review additions are reported separately at delivery. No Windows oracle, private adapter, persistence, APK or real Android device validation. API/library correctness and actual supported app count remain separate claims.
+
+## Final independent review and correction pass
+
+A fresh reviewer reproduced three Important findings: PE no-import early return bypassed machine/directory/section validation, Registry size-only query read an output-only size, and inherited FlushFileBuffers allowed handles without GENERIC_WRITE. All three were addressed. PE regression failed in three malformed cases before the correction. Flush rights regression failed before its access check. For Registry, a Linux x86-64 protected-page probe distinguishes first read/write page faults: it failed on read-before-write before the correction and passed afterward. This is stronger than claiming MSan evidence: the attempted MSan review probe stopped inside uninstrumented libstdc++ and was not valid query evidence. The protected-page test is additionally registered only on Linux x86-64 hosts; no tests are marked skipped. Normal Registry buffer tests remain platform-independent.
+
+Final additions beyond the initial batch: one file case, one Registry memory probe and one Python case. Final host totals: 29 CTest cases and 17 Python cases (40 new named cases versus baseline 1+5). GCC 13.3 Debug and Clang 18.1.3 ASan/UBSan each passed 29/29; Python passed 17/17 before publication. Local LeakSanitizer remains environment-blocked. Public CI runs full leak checking separately. A minor inherited metadata-sharing discrepancy was documented; implementing the full Windows sharing exemption is deferred pending oracle evidence. Actual Windows/Android/ABI, persistence/full Unicode and external hostile namespace mutation remain outside this release's evidence/contract.

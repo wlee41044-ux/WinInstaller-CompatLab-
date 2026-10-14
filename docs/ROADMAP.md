@@ -1,13 +1,22 @@
 # Compatibility-first roadmap
 
-This lab prioritizes APIs which unlock **more different applications**, not CPU speed.
+v0.1 established the independent file core and static import comparison. v0.2 adds five Registry APIs, focused file corrections, status-aware PE comparisons and four composite host profiles. Exact supported subsets and open limitations are in API_BEHAVIOR.md and data/api_contracts.json. No actual supported app count is established.
 
-**v0.1 — independent host module:** Win32 file creation/read/write/seek/delete/rename, CRT binary file descriptors, secure virtual-drive paths, synthetic C++ tests and PE import comparison.
+## Repeated needs by app family (analysis directions, not support guarantees)
 
-**Next batch — integrate privately:** Compare the current private runtime's import handlers with v0.1; implement tested adapters for `_wopen` write/create and `DeleteFileW`. Demonstrate unchanged read-only behavior and validate actual EXE output only after private CI and user Android testing.
+| Family | Repeated needs | Public v0.2 coverage / gap |
+|---|---|---|
+| Win32 utility | files, paths, registry settings | File subset + five Registry calls; path queries, enum and shell absent |
+| Installer | directories, staged files, registry | Synthetic files/settings profile; MSI, rollback transactions, elevation and services absent |
+| Python/PyInstaller | CRT, files, process and loader | Binary CRT subset; process creation, DLL loader and runtime initialization absent |
+| GUI utility | settings, resources, windows | Registry settings subset; resources/message loop/windowing absent |
+| Unity | files, process, graphics initialization | File/settings foundations only; runtime, graphics and process support absent |
+| .NET | runtime, registry, system APIs | Registry subset only; CLR/.NET hosting, COM and system APIs absent |
 
-**Next standalone module candidate:** Registry data-model subset (`RegOpenKeyExW`, `RegQueryValueExW`, `RegSetValueExW`, `RegCloseKey`) with hive isolation and deterministic Windows error mapping.
+## Next priorities
 
-**Later:** Processes, synchronization, COM dialogs, GUI resources and graphics APIs based on repeated failures across legally obtained test programs.
-
-Do not fake compatibility by returning unconditional success for unsupported APIs. Prefer distinct reproductions with regression tests, matching Windows-visible behavior and isolated state. Do not change the private x64 emulator in public CI.
+1. Run local authorized multi-EXE static comparisons with `--manifest data/api_contracts.json`. Rank missing imports by **number of distinct inputs**, not repeated entries. Runtime traces from a future private adapter must distinguish APIs reached from static dependency candidates. No commercial input is uploaded or committed.
+2. Privately bridge the five Registry calls and the corrected file modes behind flags; verify byte counts, HKEY IDs, error returns and state cleanup. No private integration in this batch.
+3. Prioritize Registry enumeration/deletion or process/synchronization APIs when repeated input comparisons **and reached-call evidence** show a blocker. There is no real application corpus in this release, so a measured frequency ranking of actual apps is not yet available.
+4. Fix NT delete-pending/cross-process share coordination and broader path semantics before claiming Windows-complete file behavior. Persistence/full Unicode folding require separate designs and evidence.
+5. COM dialogs, GUI resources and graphics are independent later modules, selected by actual blockers. No CPU optimization, JIT, Box64/Wine port, DirectX reimplementation or Android build here.

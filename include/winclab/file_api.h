@@ -44,14 +44,17 @@ constexpr std::uint32_t CRT_O_BINARY = 0x8000;
 enum class Error : std::uint32_t {
     ok=0, file_not_found=2, path_not_found=3, too_many_open_files=4,
     access_denied=5, invalid_handle=6, not_enough_memory=8, invalid_data=13,
-    write_protect=19, sharing_violation=32, not_supported=50,
+    not_same_device=17, write_protect=19, sharing_violation=32, not_supported=50,
     file_exists=80, invalid_parameter=87, disk_full=112, invalid_name=123,
-    directory_not_empty=145, already_exists=183,
+    negative_seek=131, directory_not_empty=145, already_exists=183, more_data=234,
 };
 
 template<class T> struct Result {
     T value{};
     Error error{Error::ok};
+    // CreateFile success diagnostic for CREATE_ALWAYS / OPEN_ALWAYS only.
+    // Other successful operations do not prescribe guest LastError updates.
+    Error last_error{Error::ok};
     [[nodiscard]] bool ok() const { return error == Error::ok; }
 };
 

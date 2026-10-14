@@ -19,5 +19,12 @@
     "_write",
     "_close",
     "_get_osfhandle"
+  ],
+  "ADVAPI32.dll": [
+    "RegOpenKeyExW",
+    "RegCreateKeyExW",
+    "RegQueryValueExW",
+    "RegSetValueExW",
+    "RegCloseKey"
   ]
 }
