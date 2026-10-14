@@ -2,6 +2,7 @@
 #include <algorithm>
 #include <cstring>
 #include <new>
+#include <set>
 
 namespace winclab {
 std::atomic<RegistryHandle> RegistryApi::next_handle_{0x100000000ULL};
@@ -129,6 +130,44 @@ Error RegistryApi::setValue(RegistryHandle handle,const std::u16string& name,std
     } catch(const std::bad_alloc&) { return Error::not_enough_memory; }
     return Error::ok;
 }
+
+Error RegistryApi::deleteValue(RegistryHandle handle,const std::u16string& name) {
+    std::lock_guard<std::mutex> guard(mutex_);
+    auto h=resolve(handle); if(!h.ok())return h.error;
+    if(!(h.value.access & KEY_SET_VALUE) || (h.value.key->machine && !options_.machine_writable))
+        return Error::access_denied;
+    auto n=normalize(name,false); if(!n.ok())return n.error;
+    return h.value.key->values.erase(n.value)?Error::ok:Error::file_not_found;
+}
+Result<std::u16string> RegistryApi::enumerateSubkey(RegistryHandle handle,std::uint32_t index) {
+    std::lock_guard<std::mutex> guard(mutex_);
+    auto h=resolve(handle); if(!h.ok())return {{},h.error};
+    if(!(h.value.access & KEY_ENUMERATE_SUB_KEYS))return {{},Error::access_denied};
+    const bool machine=h.value.key->machine;
+    const auto prefix=h.value.key->path.empty()?std::u16string{}:h.value.key->path+u'\\';
+    std::set<std::u16string> children;
+    for(const auto& entry:keys_) {
+        if(entry.first.first!=machine)continue;
+        const auto& full=entry.first.second;
+        if(full.size()<=prefix.size() || full.compare(0,prefix.size(),prefix)!=0)continue;
+        const auto remainder=full.substr(prefix.size());
+        children.emplace(remainder.substr(0,remainder.find(u'\\')));
+    }
+    if(index>=children.size())return {{},Error::no_more_items};
+    auto it=children.begin();
+    std::advance(it,index);
+    return {*it,Error::ok};
+}
+Result<RegistryValueRecord> RegistryApi::enumerateValue(RegistryHandle handle,std::uint32_t index) {
+    std::lock_guard<std::mutex> guard(mutex_);
+    auto h=resolve(handle); if(!h.ok())return {{},h.error};
+    if(!(h.value.access & KEY_QUERY_VALUE))return {{},Error::access_denied};
+    if(index>=h.value.key->values.size())return {{},Error::no_more_items};
+    auto it=h.value.key->values.begin();
+    std::advance(it,index);
+    return {RegistryValueRecord{it->first,it->second.type,it->second.bytes},Error::ok};
+}
+
 Error RegistryApi::closeKey(RegistryHandle handle) {
     std::lock_guard<std::mutex> guard(mutex_);
     if(handle==HKEY_CURRENT_USER || handle==HKEY_LOCAL_MACHINE)return Error::ok;

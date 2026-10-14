@@ -25,6 +25,9 @@
     "RegCreateKeyExW",
     "RegQueryValueExW",
     "RegSetValueExW",
-    "RegCloseKey"
+    "RegCloseKey",
+    "RegDeleteValueW",
+    "RegEnumKeyExW",
+    "RegEnumValueW"
   ]
 }

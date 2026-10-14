@@ -52,3 +52,11 @@ if(BUILD_TESTING)
     add_test(NAME profile_${profile} COMMAND winclab_profiles ${profile})
   endforeach()
 endif()
+
+# Independently testable Registry delete/enumeration host operations.
+if(BUILD_TESTING)
+  add_executable(winclab_registry_extensions tests/test_registry_extensions.cpp)
+  target_link_libraries(winclab_registry_extensions PRIVATE winclab_registry_api)
+  target_compile_options(winclab_registry_extensions PRIVATE -Wall -Wextra -Wpedantic -Werror)
+  add_test(NAME registry_enumerate_delete COMMAND winclab_registry_extensions)
+endif()

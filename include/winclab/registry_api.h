@@ -17,6 +17,13 @@ constexpr std::uint32_t REG_OPTION_NON_VOLATILE=0, REG_OPTION_VOLATILE=1;
 constexpr std::uint32_t REG_OPTION_CREATE_LINK=2, REG_OPTION_OPEN_LINK=8;
 constexpr std::uint32_t REG_CREATED_NEW_KEY=1, REG_OPENED_EXISTING_KEY=2;
 
+// Data is owned by caller; the private x64 ABI adapter implements buffer negotiation.
+struct RegistryValueRecord {
+    std::u16string name;
+    std::uint32_t type{0};
+    std::vector<std::uint8_t> bytes;
+};
+
 struct RegistryOptions {
     // Only this instance's virtual HKLM. Never grants host OS access.
     bool machine_writable{false};
@@ -39,6 +46,11 @@ public:
                      void* data,std::uint32_t* size);
     Error setValue(RegistryHandle handle,const std::u16string& name,std::uint32_t type,
                    const void* data,std::uint32_t size);
+    // RegDeleteValueW / RegEnumKeyExW / RegEnumValueW host-side subsets.
+    // Indices are zero-based; enumeration returns a snapshot copy (no guest buffers here).
+    Error deleteValue(RegistryHandle handle, const std::u16string& name);
+    Result<std::u16string> enumerateSubkey(RegistryHandle handle, std::uint32_t index);
+    Result<RegistryValueRecord> enumerateValue(RegistryHandle handle, std::uint32_t index);
     Error closeKey(RegistryHandle handle);
     std::size_t liveHandleCount() const;
 

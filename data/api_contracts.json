@@ -1,6 +1,6 @@
 {
   "schema_version": 2,
-  "lab_version": "0.2.0",
+  "lab_version": "0.3.0",
   "scope": "Public host API subsets only; not Private Android runtime support",
   "legacy_manifest": "lab_manifest.json",
   "apis": [
@@ -649,8 +649,26 @@
     {
       "dll": "ADVAPI32.dll",
       "name": "RegDeleteValueW",
-      "status": "UNSUPPORTED",
-      "reason": "No public module implementation; no stub/success result"
+      "status": "PARTIAL",
+      "reason": "No public module implementation; no stub/success result",
+      "encoding": "UTF-16 name; raw typed bytes",
+      "supported_flags": [
+        "KEY_SET_VALUE"
+      ],
+      "returns": "Error/LSTATUS; delete a named or default in-memory value",
+      "errors": [
+        0,
+        2,
+        5,
+        6,
+        87
+      ],
+      "tests": [
+        "tests/test_registry_extensions.cpp"
+      ],
+      "limitations": [
+        "No persistent registry; HKLM writable only by explicitly authorized virtual hive policy"
+      ]
     },
     {
       "dll": "ADVAPI32.dll",
@@ -661,14 +679,48 @@
     {
       "dll": "ADVAPI32.dll",
       "name": "RegEnumKeyExW",
-      "status": "UNSUPPORTED",
-      "reason": "No public module implementation; no stub/success result"
+      "status": "PARTIAL",
+      "reason": "No public module implementation; no stub/success result",
+      "encoding": "UTF-16 name; raw typed bytes",
+      "supported_flags": [
+        "KEY_ENUMERATE_SUB_KEYS"
+      ],
+      "returns": "Result<u16string> immediate subkey snapshot; ABI adapter handles caller buffer sizes",
+      "errors": [
+        0,
+        5,
+        6,
+        259
+      ],
+      "tests": [
+        "tests/test_registry_extensions.cpp"
+      ],
+      "limitations": [
+        "ASCII-only case folding; deterministic lexical host order, not native Windows storage enumeration order"
+      ]
     },
     {
       "dll": "ADVAPI32.dll",
       "name": "RegEnumValueW",
-      "status": "UNSUPPORTED",
-      "reason": "No public module implementation; no stub/success result"
+      "status": "PARTIAL",
+      "reason": "No public module implementation; no stub/success result",
+      "encoding": "UTF-16 name; raw typed bytes",
+      "supported_flags": [
+        "KEY_QUERY_VALUE"
+      ],
+      "returns": "Result<RegistryValueRecord> name/type/deep-copied bytes; adapter handles buffer negotiation",
+      "errors": [
+        0,
+        5,
+        6,
+        259
+      ],
+      "tests": [
+        "tests/test_registry_extensions.cpp"
+      ],
+      "limitations": [
+        "Snapshot result; no Windows-compatible buffer negotiation inside host C++ method"
+      ]
     },
     {
       "dll": "KERNEL32.dll",

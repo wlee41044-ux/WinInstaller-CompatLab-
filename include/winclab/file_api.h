@@ -46,7 +46,7 @@ enum class Error : std::uint32_t {
     access_denied=5, invalid_handle=6, not_enough_memory=8, invalid_data=13,
     not_same_device=17, write_protect=19, sharing_violation=32, not_supported=50,
     file_exists=80, invalid_parameter=87, disk_full=112, invalid_name=123,
-    negative_seek=131, directory_not_empty=145, already_exists=183, more_data=234,
+    negative_seek=131, directory_not_empty=145, already_exists=183, more_data=234, no_more_items=259,
 };
 
 template<class T> struct Result {
