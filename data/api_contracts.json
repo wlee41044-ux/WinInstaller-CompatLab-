@@ -650,7 +650,6 @@
       "dll": "ADVAPI32.dll",
       "name": "RegDeleteValueW",
       "status": "PARTIAL",
-      "reason": "No public module implementation; no stub/success result",
       "encoding": "UTF-16 name; raw typed bytes",
       "supported_flags": [
         "KEY_SET_VALUE"
@@ -668,6 +667,9 @@
       ],
       "limitations": [
         "No persistent registry; HKLM writable only by explicitly authorized virtual hive policy"
+      ],
+      "host_dependencies": [
+        "C++17 in-memory RegistryApi; no Windows SDK, no host OS registry"
       ]
     },
     {
@@ -680,7 +682,6 @@
       "dll": "ADVAPI32.dll",
       "name": "RegEnumKeyExW",
       "status": "PARTIAL",
-      "reason": "No public module implementation; no stub/success result",
       "encoding": "UTF-16 name; raw typed bytes",
       "supported_flags": [
         "KEY_ENUMERATE_SUB_KEYS"
@@ -697,13 +698,15 @@
       ],
       "limitations": [
         "ASCII-only case folding; deterministic lexical host order, not native Windows storage enumeration order"
+      ],
+      "host_dependencies": [
+        "C++17 in-memory RegistryApi; no Windows SDK, no host OS registry"
       ]
     },
     {
       "dll": "ADVAPI32.dll",
       "name": "RegEnumValueW",
       "status": "PARTIAL",
-      "reason": "No public module implementation; no stub/success result",
       "encoding": "UTF-16 name; raw typed bytes",
       "supported_flags": [
         "KEY_QUERY_VALUE"
@@ -720,6 +723,9 @@
       ],
       "limitations": [
         "Snapshot result; no Windows-compatible buffer negotiation inside host C++ method"
+      ],
+      "host_dependencies": [
+        "C++17 in-memory RegistryApi; no Windows SDK, no host OS registry"
       ]
     },
     {
