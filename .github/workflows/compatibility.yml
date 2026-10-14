@@ -39,6 +39,11 @@ jobs:
         run: cmake --build build --parallel 2
       - name: File, registry, four synthetic profiles and isolation regressions
         run: ctest --test-dir build --output-on-failure
+      - name: Build and verify offline source-kit module
+        if: matrix.python
+        run: |
+          python3 tools/module_bundle.py build --out dist/WinInstaller-CompatLab-0.3.0.wicmod
+          python3 tools/module_bundle.py verify dist/WinInstaller-CompatLab-0.3.0.wicmod
       - name: PE32 and PE32+ static comparison and manifest contracts
         if: matrix.python
         run: python3 -m unittest discover -s tests -p 'test_*.py' -v
